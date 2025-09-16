@@ -1,0 +1,15 @@
+# Node.js
+node_modules
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local env & credentials
+.env
+
+# System files
+.DS_Store
+
