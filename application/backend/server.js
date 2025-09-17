@@ -13,7 +13,10 @@ app.use(express.json());
 app.use("/api", userRoutes);
 
 const PORT = process.env.PORT || 5000;
-const MONGO = process.env.MONGO_URI || "mongodb://localhost:27017/budgeter";
+const MONGO =
+  process.env.MONGO_URI ||
+  `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}` +
+    `@${process.env.MONGO_HOST}:27017/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
 
 mongoose
   .connect(MONGO)
