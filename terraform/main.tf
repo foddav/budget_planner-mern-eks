@@ -17,8 +17,9 @@ module "eks" {
 }
 
 resource "random_password" "mongodb_root_password" {
-  length  = 16
-  override_characters = "!@#$%&*()-_=+[]{}"
+  length           = 16
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}"
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -36,11 +37,9 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
-  }
+  kubernetes_host                   = data.aws_eks_cluster.cluster.endpoint
+  kubernetes_cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  kubernetes_token                  = data.aws_eks_cluster_auth.cluster.token
 }
 
 resource "helm_release" "mongodb" {
