@@ -41,8 +41,6 @@ spec:
                 secretKeyRef:
                   name: mongodb-credentials
                   key: MONGO_DB
-            - name: MONGO_URI
-              value: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}:27017/${MONGO_DB}?retryWrites=true&w=majority"
 ---
 apiVersion: v1
 kind: Service
