@@ -2,11 +2,10 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = ">= 21.2.0"
 
-  cluster_name    = var.cluster_name
+  name    = var.cluster_name
   kubernetes_version = "1.33"
-  manage_aws_auth = true
 
-  node_groups = {
+  eks_managed_node_groups = {
     default = {
       desired_capacity = var.desired_capacity
       max_capacity     = var.desired_capacity + 1
