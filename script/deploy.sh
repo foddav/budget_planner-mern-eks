@@ -19,7 +19,17 @@ aws eks update-kubeconfig --region "$AWS_REGION" --profile "$AWS_PROFILE" --name
 # ================= 2) login to ECR =================
 aws ecr get-login-password --region "$AWS_REGION" --profile "$AWS_PROFILE" | docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-# ================= 3) build & push images =================
+# ================= 3) install ingress helm =================
+echo "Adding ingress-nginx helm repo (no-op if already added)..."
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
+helm repo update || true
+
+echo "Install/upgrade ingress-nginx controller..."
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --wait --timeout 5m
+
+# ================= 4) build & push images =================
 echo "Building & pushing frontend image..."
 docker build -t budget_planner_frontend:latest ./application/frontend
 docker tag budget_planner_frontend:latest "${ECR_FRONT}:latest"
@@ -30,11 +40,11 @@ docker build -t budget_planner_backend:latest ./application/backend
 docker tag budget_planner_backend:latest "${ECR_BACK}:latest"
 docker push "${ECR_BACK}:latest"
 
-# ================= 4) apply k8s namespace manifest =================
+# ================= 5) apply k8s namespace manifest =================
 echo "Applying Kubernetes manifests (namespaces)..."
 kubectl apply -f kubernetes/namespaces.yaml
 
-# ================= 5) create/update mongodb secret =================
+# ================= 6) create/update mongodb secret =================
 echo "Creating/updating mongodb-credentials secret in namespace 'app'..."
 kubectl create secret generic mongodb-credentials \
   --from-literal=MONGO_USERNAME=appuser \
@@ -44,17 +54,18 @@ kubectl create secret generic mongodb-credentials \
   -n app \
   --dry-run=client -o yaml | kubectl apply -f -
 
-# ================= 6) apply k8s namespace manifest =================
-echo "Applying Kubernetes manifests (backend, frontend)..."
+# ================= 7) apply k8s namespace manifest =================
+echo "Applying Kubernetes manifests (ingress, backend, frontend)..."
+kubectl apply -f kubernetes/ingress.yaml
 kubectl apply -f kubernetes/backend-deployment.yaml
 kubectl apply -f kubernetes/frontend-deployment.yaml
 
-# ================= 7) final status and frontend service address =================
-echo "Checking frontend service (may take a moment for LoadBalancer IP)..."
-kubectl get svc frontend -n app
+# ================= 8) final status and frontend service address =================
+echo "Ingress controller svc (look for EXTERNAL-IP / HOSTNAME):"
+kubectl get svc -n ingress-nginx
 
 echo ""
-echo "If frontend has EXTERNAL-IP or HOSTNAME, open it in browser (http)."
-echo "If EXTERNAL-IP is '<pending>' wait a minute and re-run: kubectl get svc frontend -n app"
+echo "If the ingress has an EXTERNAL-IP / HOSTNAME, open it in browser."
+echo "If it's <pending> wait a minute and re-run: kubectl get svc -n ingress-nginx"
 echo ""
 echo "DONE."

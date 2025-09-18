@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 
-const BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:5000/api";
+const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, options);
