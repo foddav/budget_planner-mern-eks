@@ -4,7 +4,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.0.1"
 
-  name = "guess_the_number-vpc"
+  name = "budget_planner-vpc"
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 2)
 
@@ -18,26 +18,21 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = ">= 21.2.0"
 
-  name    = var.cluster_name
+  name               = var.cluster_name
   kubernetes_version = "1.33"
 
   addons = {
     coredns                = {}
-    eks-pod-identity-agent = {
-      before_compute = true
-    }
+    eks-pod-identity-agent = { before_compute = true }
     kube-proxy             = {}
-    vpc-cni                = {
-      before_compute = true
-    }
+    vpc-cni                = { before_compute = true }
   }
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  enable_irsa = true
-
-  endpoint_public_access = true
+  enable_irsa                             = true
+  endpoint_public_access                  = true
   enable_cluster_creator_admin_permissions = true
 
   eks_managed_node_groups = {
@@ -47,6 +42,9 @@ module "eks" {
       min_capacity     = 1
       instance_types   = [var.node_instance_type]
       name             = var.node_group_name
+
+      force_update_version = true
+      create_before_destroy = true
     }
   }
 }
@@ -54,7 +52,7 @@ module "eks" {
 resource "random_password" "mongodb_root_password" {
   length           = 16
   special          = true
-  override_special = "!@#$%&*()-_=+[]{}"
+  override_special = "!@#$%&*()-_=+"
 }
 
 data "aws_eks_cluster" "cluster" {
@@ -79,15 +77,41 @@ provider "helm" {
   }
 }
 
+resource "kubernetes_storage_class" "budget_planner_gp3" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+  volume_binding_mode = "Immediate"
+  reclaim_policy      = "Delete"
+
+  parameters = {
+    type = "gp3"
+  }
+
+  depends_on = [
+    module.eks,
+    aws_eks_addon.ebs_csi_driver
+  ]
+}
+
 resource "helm_release" "mongodb" {
-  name       = "mongodb"
-  repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart      = "mongodb"
-  version    = "16.5.45"
+  depends_on = [
+    kubernetes_storage_class.budget_planner_gp3,
+    aws_eks_addon.ebs_csi_driver
+  ]
 
-  namespace = "database"
-
+  name             = "mongodb"
+  repository       = "oci://registry-1.docker.io/bitnamicharts"
+  chart            = "mongodb"
+  version          = "16.5.45"
+  namespace        = "database"
   create_namespace = true
+  timeout          = 600
 
   set {
     name  = "auth.rootPassword"
@@ -112,5 +136,20 @@ resource "helm_release" "mongodb" {
   set {
     name  = "persistence.enabled"
     value = "true"
+  }
+
+  set {
+    name  = "image.registry"
+    value = "docker.io"
+  }
+
+  set {
+    name  = "image.repository"
+    value = "bitnamilegacy/mongodb"
+  }
+
+  set {
+    name  = "image.tag"
+    value = "8.0.13-debian-12-r0"
   }
 }
