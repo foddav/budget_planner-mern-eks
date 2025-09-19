@@ -67,10 +67,10 @@ The app is useful for short-term budgeting tasks like planning a trip or a shopp
 ---
 
 ## 🚀 Quick deploy to AWS (step-by-step)  
-1. Prepare:  
+### 1. Prepare:  
 Ensure you have AWS CLI, kubectl, helm, docker and terraform installed and configured locally.  
   
-2. From repo root, run Terraform:
+### 2. From repo root, run Terraform:
 ```
 cd terraform  
 terraform init  
@@ -79,20 +79,20 @@ terraform apply
 Confirm the apply and wait until infra is created.  
 This will create VPC, EKS cluster with nodes, ECR repositories and installs EBS CSI + MongoDB via Helm.  
   
-3. After terraform apply completes, get the Terraform ECR name outputs:  
+### 3. After terraform apply completes, get the Terraform ECR name outputs:  
 - ecr_frontend → copy this value into kubernetes/frontend-deployment.yaml replacing <REPLACE_WITH_ECR_FRONTEND>  
   
 - ecr_backend → copy this value into kubernetes/backend-deployment.yaml replacing <REPLACE_WITH_ECR_BACKEND>  
   
 (The YAMLs expect the full ECR repository URL. Example: 123456789012.dkr.ecr.eu-central-1.amazonaws.com/budget_planner-frontend-ecr:latest)  
   
-4. Make the deploy script executable:  
+### 4. Make the deploy script executable:  
 ```
 cd ..  
 chmod +x script/deploy.sh  
 ``` 
   
-5. Configure AWS profile:  
+### 5. Configure AWS profile:  
 - list existing profiles: `aws configure list-profiles`  
   
 - (optional) create a new profile named `<example>`:  
@@ -100,16 +100,16 @@ chmod +x script/deploy.sh
 aws configure --profile <example>  
 ```  
   
-6. Run the deployment script using the profile:  
+### 6. Run the deployment script using the profile:  
 ```
 AWS_PROFILE=<example> ./script/deploy.sh
 ``` 
   
-7. After the script finishes:  
+### 7. After the script finishes:  
 - Check ingress/ingress-nginx service for the external address on the console.    
 - Open the EXTERNAL-IP / HOSTNAME in your browser to access the app.  
   
-8. Cleanup (if you want to destroy infra):  
+### 8. Cleanup (if you want to destroy infra):  
 ```
 cd terraform  
 terraform destroy
