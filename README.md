@@ -115,7 +115,8 @@ cd terraform
 terraform destroy
 ```  
 confirm and wait until everything is removed
-
+  
+---
   
 ## Notes & important details / tips  
 - **.env support**  
