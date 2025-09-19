@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 
+// Load API base from build-time env (import.meta.env), otherwise fall back to the local /api proxy.
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
 async function request(path, options = {}) {

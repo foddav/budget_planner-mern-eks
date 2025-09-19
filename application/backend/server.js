@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+// In development load environment variables from a local .env file.
+// In production rely on platform-managed env vars (avoid reading local secret files).
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -17,6 +19,7 @@ app.use("/api", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 
+// If a full connection string is provided use it, otherwise build one from parts.
 if (process.env.MONGO_URI) {
   connectAndListen(process.env.MONGO_URI);
 } else {
@@ -27,6 +30,7 @@ if (process.env.MONGO_URI) {
 
   let uri;
   if (user && pass) {
+    // Ensure credentials are URL-encoded before embedding into the URI.
     const u = encodeURIComponent(user);
     const p = encodeURIComponent(pass);
     uri = `mongodb://${u}:${p}@${host}:27017/${db}?retryWrites=true&w=majority`;
@@ -38,6 +42,7 @@ if (process.env.MONGO_URI) {
 }
 
 function connectAndListen(mongoUri) {
+    // Avoid printing secrets to logs; indicate only that a Mongo URI is provided.
   console.log("Connecting to Mongo:", mongoUri.startsWith("mongodb://") ? "[mongodb uri]" : "[hidden]");
   mongoose
     .connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
